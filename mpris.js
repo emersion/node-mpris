@@ -22,10 +22,6 @@
  * SOFTWARE.
  */
 
-// sudo apt-get install libdbus-1-dev
-// http://wiki.ubuntuusers.de/D-Bus
-// https://github.com/Shouqun/node-dbus
-
 var util = require('util');
 var debug = require('debug')('info');
 var debugEvent = require('debug')('event');
@@ -258,23 +254,27 @@ mc.connect = function (playerName, callback) {
   }
 
   waitForService(mc.dbusName, TIMEOUTDELAY, INTERVALDELAY, function (error) {
-    if(error) {
-      console.error (error);
-    } else {
-      debug("player found! :)");
-      loadInterface(mc.dbusName, 'org.mpris.MediaPlayer2', function (errorBase) {
-        loadInterface(mc.dbusName, 'org.mpris.MediaPlayer2.Player', function (errorPlayer) {
-          loadInterface(mc.dbusName, 'org.mpris.MediaPlayer2.TrackList', function (errorTrackList) {
-            loadInterface(mc.dbusName, 'org.mpris.MediaPlayer2.Playlists', function (errorPlaylists) {
-              watchProperties(mc, mc.dbusName, function (errorWatchProperties) {
-                if(errorBase || errorPlayer || errorTrackList || errorPlaylists || errorWatchProperties ) callback(errorBase+" "+errorPlayer+" "+errorTrackList+" "+errorPlaylists+" "+errorWatchProperties, mc);
-                else callback(null, mc);
-              });
+    if (error) {
+      return callback(error);
+    }
+
+    debug("player found! :)");
+    loadInterface(mc.dbusName, 'org.mpris.MediaPlayer2', function (errorBase) {
+      loadInterface(mc.dbusName, 'org.mpris.MediaPlayer2.Player', function (errorPlayer) {
+        loadInterface(mc.dbusName, 'org.mpris.MediaPlayer2.TrackList', function (errorTrackList) {
+          loadInterface(mc.dbusName, 'org.mpris.MediaPlayer2.Playlists', function (errorPlaylists) {
+            watchProperties(mc, mc.dbusName, function (errorWatchProperties) {
+              var err = errorBase || errorPlayer || errorTrackList || errorPlaylists || errorWatchProperties;
+              if (err) {
+                return callback(err, mc);
+              }
+
+              callback(null, mc);
             });
           });
         });
       });
-    }
+    });
   });
 }
 
