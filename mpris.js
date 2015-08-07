@@ -51,39 +51,43 @@ var INTERVALDELAY = 100;
  * Wait for the dbus name of the player
  */
 waitForService = function (serviceName, timeoutDelay, intervalDelay, callback) {
-  bus.getInterface('org.freedesktop.DBus', '/', 'org.freedesktop.DBus', function(err, iface) {
+  bus.getInterface('org.freedesktop.DBus', '/', 'org.freedesktop.DBus', function (err, iface) {
     var timeout, interval;
 
-    if(err) { return callback(err); } else {
-      var checkService = function (callback) {
-        debug("looking for dbus service");
-        iface.ListNames['finish'] = function(serviceList) {
-          for (index = 0; index < serviceList.length; ++index) {
-            if(serviceList[index] === serviceName) {
-              return callback(true);
-            }
-          }
-          return callback(false);
-        }
-        iface.ListNames();
-      }
-
-      timeout = setTimeout(function () {
-        debug("timeout");
-        clearInterval(interval);
-        return callback("timeout");
-      }, timeoutDelay);
-      
-      interval = setInterval(function() {
-        checkService(function (found) {
-          if (found) {
-            clearInterval(interval);
-            clearTimeout(timeout);
-            callback(null);
-          }
-        });
-      }, intervalDelay);
+    if (err) {
+      return callback(err);
     }
+
+    var checkService = function (callback) {
+      debug("looking for dbus service");
+      iface.ListNames['finish'] = function(serviceList) {
+        for (index = 0; index < serviceList.length; ++index) {
+          if ((serviceName && serviceList[index] === serviceName)
+            || (!serviceName && serviceList[index].indexOf('org.mpris.MediaPlayer2.') === 0)) {
+            mc.dbusName = serviceList[index];
+            return callback(true);
+          }
+        }
+        return callback(false);
+      }
+      iface.ListNames();
+    }
+
+    timeout = setTimeout(function () {
+      debug("timeout");
+      clearInterval(interval);
+      return callback("timeout");
+    }, timeoutDelay);
+    
+    interval = setInterval(function() {
+      checkService(function (found) {
+        if (found) {
+          clearInterval(interval);
+          clearTimeout(timeout);
+          callback(null);
+        }
+      });
+    }, intervalDelay);
   });
 }
 
@@ -247,8 +251,11 @@ mc.disconnect = function (playerName, callback) {
 
 mc.connect = function (playerName, callback) {
   bus = dbus.getBus('session');
-  mc.playerName = playerName;
-  mc.dbusName = 'org.mpris.MediaPlayer2.' + this.playerName;
+
+  if (playerName) {
+    mc.playerName = playerName;
+    mc.dbusName = 'org.mpris.MediaPlayer2.' + this.playerName;
+  }
 
   waitForService(mc.dbusName, TIMEOUTDELAY, INTERVALDELAY, function (error) {
     if(error) {
@@ -347,24 +354,29 @@ mc.start = function(playerName, arguments, callback) {
     case 'spotify': 
       // TODO http://www.mabishu.com/blog/2010/11/15/playing-with-d-bus-interface-of-spotify-for-linux/
     break;
+    case 'gnome-music':
+      playerName = 'GnomeMusic';
+      command = 'gnome-music';
   }
 
-  playerApp = spawn(command, arguments, {stdio: [ 'ignore', 'ignore', 'ignore' ]});
+  if (command) {
+    playerApp = spawn(command, arguments, { stdio: ['ignore', 'ignore', 'ignore'] });
 
-  playerApp.on('exit', function (code) {
-    debug('playerApp exit code: ' + code); 
-    mc.emit('exit', code);
-  });
+    playerApp.on('exit', function (code) {
+      debug('playerApp exit code: ' + code); 
+      mc.emit('exit', code);
+    });
 
-  playerApp.on('close', function (code, signal) {
-    debug('playerApp close code: '+code+' signal: '+signal);
-    mc.emit('close', code, signal);
-  });
+    playerApp.on('close', function (code, signal) {
+      debug('playerApp close code: '+code+' signal: '+signal);
+      mc.emit('close', code, signal);
+    });
 
-  playerApp.on('error', function (error) {
-    console.error('playerApp error: '+error);
-    mc.emit('error', error);
-  });
+    playerApp.on('error', function (error) {
+      console.error('playerApp error: '+error);
+      mc.emit('error', error);
+    });
+  }
 
   mc.connect(playerName, callback);
 };

@@ -2,7 +2,7 @@
 var optimist = require('optimist');
 var argv = optimist
   .usage('Usage: $0 -p [string] -u [string]')
-  .string(['p','f']).default('p', 'vlc').alias('p', 'player').alias('p', 'mediaplayer').describe('p', 'Mediaplayer to start')
+  .string(['p','f']).default('p', '').alias('p', 'player').alias('p', 'mediaplayer').describe('p', 'Mediaplayer to start')
   .alias('u', 'uri').demand('u').describe('u', 'URI for file to play, local files should use the "file://" schema.')
   .alias('h', 'help').describe('h', 'Show this help')
   .argv;
