@@ -208,17 +208,21 @@ var loadInterface = function (dbusName, interfaceName, callback) {
       switch(iface.interfaceName) {
         case 'org.mpris.MediaPlayer2':
           valueToSet = mc;
+          propertyGetterKeys = ['Fullscreen'];
           propertySetterKeys = ['Fullscreen'];
         break;
         case 'org.mpris.MediaPlayer2.Player':
           valueToSet = mc.Player;
+          propertyGetterKeys = ['PlaybackStatus', 'LoopStatus', 'Rate', 'Shuffle', 'Metadata', 'Volume', 'Position', 'MinimumRate', 'MaximumRate', 'CanGoNext', 'CanGoPrevious', 'CanPlay', 'CanPause', 'CanSeek', 'CanControl'];
           propertySetterKeys = ['LoopStatus', 'Rate', 'Shuffle', 'Volume'];
         break;
         case 'org.mpris.MediaPlayer2.TrackList':
           valueToSet = mc.TrackList;
+          propertyGetterKeys = ['Tracks', 'CanEditTracks'];
         break;
         case 'org.mpris.MediaPlayer2.Playlists':
           valueToSet = mc.Playlists;
+          propertyGetterKeys = ['PlaylistCount', 'Orderings', 'ActivePlaylist'];
         break;
       }
 
